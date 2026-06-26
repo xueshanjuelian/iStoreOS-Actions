@@ -253,19 +253,33 @@ jobs:
         run: |
           echo "📦 正在下载预构建 rootfs"
           mkdir -p bin/targets/armsr/armv8
-          curl -L -o bin/targets/armsr/armv8/openwrt-armvirt-64-default-rootfs.tar.gz \
-            https://github.com/Kwonelee/iStoreOS-Actions/releases/download/iStoreOS-24.10.6-RELEASE-dhcp/istoreos-armsr-armv8-generic-rootfs.tar.gz
+          
+          # 加上了 -fSL 参数。如果 URL 404，curl 会直接在此处报错终止，防止后面带病运行
+          curl -fSL -o bin/targets/armsr/armv8/openwrt-armvirt-64-default-rootfs.tar.gz \
+            "https://github.com/Kwonelee/iStoreOS-Actions/releases/download/iStoreOS-24.10.6-RELEASE-dhcp/istoreos-armsr-armv8-generic-rootfs.tar.gz"
 
-      - name: 🔍 查找rootfs.tar.gz所在路径
+      - name: 🔍 查找并校验 rootfs.tar.gz 路径
         id: find_rootfs
         run: |
           ROOTFS_FILE=$(find bin/targets/armsr/armv8/ -type f -name "*rootfs.tar.gz" | head -n1)
           echo "✅ Found: $ROOTFS_FILE"
+          
           if [ ! -f "$ROOTFS_FILE" ]; then
             echo "❌ 找不到 rootfs.tar.gz 文件"
             exit 1
           fi
+          
+          # 增加安全校验：检查下载的文件大小是否正常（正常包至少大于 5MB/5000000 字节）
+          FILE_SIZE=$(stat -c%s "$ROOTFS_FILE" 2>/dev/null || echo 0)
+          if [ "$FILE_SIZE" -lt 5000000 ]; then
+            echo "❌ 错误: 下载的 rootfs 文件体积异常 ($FILE_SIZE 字节)。"
+            echo "💡 请检查该 Release 链接是否真的存在该文件: "
+            echo "👉 https://github.com/${{ github.actor }}/iStoreOS-Actions/releases/tag/iStoreOS-${{ env.VERSION }}-${{ inputs.openwrt_rootfs }}-${{ inputs.network_settings }}"
+            exit 1
+          fi
+          
           echo "file=$ROOTFS_FILE" >> $GITHUB_OUTPUT
+
 
       - name: 🧱 打包iStoreOS固件
         uses: ophub/amlogic-s9xxx-openwrt@main
