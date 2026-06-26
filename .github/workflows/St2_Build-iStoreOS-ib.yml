@@ -310,8 +310,18 @@ jobs:
       - name: 🚀 上传到 Release
         uses: softprops/action-gh-release@v2.2.1
         with:
+          # 指定目标 Release 标签
           tag_name: iStoreOS-${{ env.VERSION }}-${{ inputs.openwrt_rootfs }}-${{ inputs.network_settings }}
+          
+          # 待上传的打包后固件路径
           files: |
             ${{ env.PACKAGED_OUTPUTPATH }}/*.img.gz
+            
+          # 关键优化：如果找不到 img.gz 文件，输出警告但不让 Workflow 报错死掉
+          fail_on_unmatched_files: false
+          
+          # 将此 Release 设为最新发布（方便在仓库主页查看）
+          make_latest: true
         env:
+          # 使用你自定义的 GH_TOKEN 密钥进行鉴权
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
