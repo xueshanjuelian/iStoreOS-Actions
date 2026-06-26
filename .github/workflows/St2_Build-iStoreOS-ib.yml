@@ -301,25 +301,27 @@ jobs:
           name: ${{ env.DEVICE }}--${{ env.FILE_DATE }}
           path: openwrt/bin
           
-      - name: 发布固件至 Release
+      - name: 🚀 发布固件至 Release
         uses: ncipollo/release-action@v1
         with:
-          # 💡 1. 修复非法的 Tag 名字：改用当前环境明确拥有的有效变量
+          # 显式传入鉴权 Token（直接使用系统默认的高权限 Token）
+          token: ${{ secrets.GITHUB_TOKEN }}
+        
+          # 设定合法的 Tag 名字
           tag: "iStoreOS-${{ env.VERSION }}-${{ inputs.openwrt_rootfs }}-${{ inputs.network_settings }}"
-         
-          # 💡 2. 修正固件路径：指向真正的成品固件文件夹而非源码空目录
+        
+          # 精准指向打包成功的固件绝对路径
           artifacts: "${{ env.PACKAGED_OUTPUTPATH }}/*.img.gz"
         
-          # 💡 3. 允许追加和覆盖更新（防止遇到重名 Tag 冲突）
+          # 允许追加和覆盖更新
           allowUpdates: true
           replacesArtifacts: true
         
+          # 固件描述文本
           body: |
             # 玩客云/网心云 OEC Turbo (wxy-oect) 固件发布
           
             * 默认后台 IP: `192.168.1.1`
             * 默认密码: `none` (或 `password`)
-        
-          # 💡 4. 传入你的鉴权 Token
-          token: ${{ secrets.GH_TOKEN }}
+
 
